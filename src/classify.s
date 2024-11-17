@@ -167,6 +167,21 @@ classify:
     lw t0, 0(s3)
     lw t1, 0(s8)
     # mul a0, t0, t1 # FIXME: Replace 'mul' with your own implementation
+    addi sp, sp, -12
+    sw ra, 0(sp)
+    sw a5, 4(sp)
+    sw a6, 8(sp)
+
+    mv a5, t0
+    mv a6, t1
+    jal ra, booth_mul
+    mv a0, a6
+
+    lw ra, 0(sp)
+    lw a5, 4(sp)
+    lw a6, 8(sp)
+    addi sp, sp, 12
+    
     slli a0, a0, 2
     jal malloc 
     beq a0, x0, error_malloc
@@ -205,7 +220,22 @@ classify:
     lw t1, 0(s8)
     # mul a1, t0, t1 # length of h array and set it as second argument
     # FIXME: Replace 'mul' with your own implementation
-    
+    addi sp, sp, -12
+    sw ra, 0(sp)
+    sw a5, 4(sp)
+    sw a6, 8(sp)
+
+    mv a5, t0
+    mv a6, t1
+    jal ra, booth_mul
+    mv a1, a6
+
+    lw ra, 0(sp)
+    lw a5, 4(sp)
+    lw a6, 8(sp)
+    addi sp, sp, 12
+
+
     jal relu
     
     lw a0, 0(sp)
@@ -227,6 +257,21 @@ classify:
     lw t0, 0(s3)
     lw t1, 0(s6)
     # mul a0, t0, t1 # FIXME: Replace 'mul' with your own implementation
+    addi sp, sp, -12
+    sw ra, 0(sp)
+    sw a5, 4(sp)
+    sw a6, 8(sp)
+
+    mv a5, t0
+    mv a6, t1
+    jal ra, booth_mul
+    mv a0, a6
+
+    lw ra, 0(sp)
+    lw a5, 4(sp)
+    lw a6, 8(sp)
+    addi sp, sp, 12
+
     slli a0, a0, 2
     jal malloc 
     beq a0, x0, error_malloc
@@ -286,8 +331,21 @@ classify:
     mv a0, s10 # load o array into first arg
     lw t0, 0(s3)
     lw t1, 0(s6)
-    mul a1, t0, t1 # load length of array into second arg
-    # FIXME: Replace 'mul' with your own implementation
+    # mul a1, t0, t1 # FIXME: Replace 'mul' with your own implementation
+    addi sp, sp, -12
+    sw ra, 0(sp)
+    sw a5, 4(sp)
+    sw a6, 8(sp)
+
+    mv a5, t0
+    mv a6, t1
+    jal ra, booth_mul
+    mv a1, a6
+
+    lw ra, 0(sp)
+    lw a5, 4(sp)
+    lw a6, 8(sp)
+    addi sp, sp, 12
     
     jal argmax
     
@@ -384,3 +442,65 @@ error_args:
 error_malloc:
     li a0, 26
     j exit
+
+# Booth's Algorithm
+# Args:
+#   a5: multiplicand
+#   a6: multiplier
+# Returns:
+#   a6: product
+
+booth_mul:
+    # Prologue
+    addi sp, sp, -28
+    sw ra, 0(sp)
+    sw s0, 4(sp)
+    sw s1, 8(sp)
+    sw s2, 12(sp)
+    sw s3, 16(sp)
+    sw s4, 20(sp)
+    sw a5, 24(sp)
+
+    ori s0, a5, 0
+    beq s0, x0, skip_mul
+    ori s0, a6, 0
+    beq s0, x0, skip_mul
+
+    li s0, 0
+    li s1, 16
+    slli s2, a5, 16
+    li s4, 0xffff
+    and a6, a6, s4
+
+loop_mul:
+    beq s1, x0, loop_mul_end
+    andi s3, a6, 0x1
+    xor s4, s3, s0
+    beq s4, x0, skip_operation
+    beq s0, x0, sub_multiplicand
+    add a6, a6, s2
+    j skip_operation
+
+sub_multiplicand:
+    sub a6, a6, s2
+
+skip_operation:
+    mv s0, s3
+    addi s1, s1, -1
+    srai a6, a6, 1
+    j loop_mul
+
+skip_mul:
+    mv a6, s0
+
+loop_mul_end:
+    # Epilogue
+    lw ra, 0(sp)
+    lw s0, 4(sp)
+    lw s1, 8(sp)
+    lw s2, 12(sp)
+    lw s3, 16(sp)
+    lw s4, 20(sp)
+    lw a5, 24(sp)
+    addi sp, sp, 28
+    jr ra
