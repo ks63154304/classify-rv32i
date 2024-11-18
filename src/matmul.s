@@ -117,7 +117,7 @@ inner_loop_start:
 inner_loop_end:
     # TODO: Add your own implementation
     addi s0, s0, 1 # incrementing outer loop counter
-    slli t1 , a2, 2
+    slli t1 , a2, 2 # incrementing the column count on Matrix A to s3 
     add s3, s3, t1 
     j outer_loop_start
 
