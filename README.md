@@ -1,7 +1,7 @@
 # Assignment 2: Classify
 
 
-## Part A
+## Part A: Mathematical Functions
 
 ### Task 1: Relu
 In `relu.s`, there is only one register be set value before `loop_start`. This means we only can use these register to count the step of the loop. Consequently, I use `t1` as the counter of the loop because the initial number of `t1` is 0. Then, `t1` can also be regarded as the index of the array to be modified.`index * 4 + start address` is the address of `array[index]`.
@@ -50,11 +50,31 @@ The method of tracing all element in array is same as task 1. Point to `t2 >> 2 
 In `dot.s`, I need to implement matrix multiplication, but M extension instructions are not permitted.I have to implement multiple with the basic instruction. Therefore, I choose Booth's multiplication algorithm as the basis of my multiple instruction. 
 
 ### Task 3.2: Matrix Multiplication
-In `matmul.s`, we only deal with the rest of outer loop between inner loop end and enter the next iteration of outer loop. the first instruction `addi s0, s0, 1` is incrementing `s0` beacause `s0` is outer loop counter. Then, the second and third instruction is incrementing `s3` with the column count on Matrix A. `s3` is the pointer of matrix A as the argument for `dot` funtion. When ending the inner loop every time, need to give a new address of matrix A to do the next `dot` funtion.The new address is the start address of the next row on matrix A. Hence, s3 should be replaced with the start address of the next row when inner loop end. 
+In `matmul.s`, we only deal with the rest of outer loop between inner loop end and enter the next iteration of outer loop. the first instruction `addi s0, s0, 1` is incrementing `s0` beacause `s0` is outer loop counter. Then, the second and third instruction is incrementing `s3` with the column count on Matrix A. `s3` is the pointer of matrix A as the argument for `dot` funtion. When ending the inner loop every time, need to give a new address of matrix A to do the next `dot` funtion.The new address is the start address of the next row on matrix A. Hence, `s3` should be replaced with the start address of the next row when inner loop end. 
 ```
 inner_loop_end:
     addi s0, s0, 1 # incrementing outer loop counter
     slli t1 , a2, 2 # incrementing the column count on Matrix A to s3 
     add s3, s3, t1 
     j outer_loop_start
+```
+
+## Part B: File Operations and Main
+
+In all tasks of Part B, there are always two problem should be sloved. One is implementing the multiple instrtuction with basic instrctions,and the other is following RISC-V Calling Convention. The first problem have been mentioned in Dot Product, so I also use Booth's multiplication algorithm to implement the multiple instrtuction. Then, if we want to call callee funtion in the caller funtion, we must save arguements and `ra` of the caller funtion. Otherwise, when finishing the callee funtion and return the caller funtion, the arguements and `ra` of the caller funtion will be lost. RISC-V Calling Convention is a convention tell programmer how to save and restore those value when calling callee funtion. The following instrution follow this convention. Before enter another funtion, use stack pointer to save arguments (`a1` and `a0`) and `ra` of caller funtion. Now, `a0` and `a1` can be used as the arguement of the callee funtion. Until the callee funtion finish, the caller funtion can load the origin value to `a0` and `a1` from stack pointer. `a0` and `a1` become the arguemnet of caller funtion again. 
+```
+    # Prologue
+    addi sp, sp, -12
+    sw a0, 0(sp)
+    sw a1, 4(sp)
+    sw ra, 8(sp)
+    mv a0, t1
+    mv a1, t2
+    jal ra, booth_mul
+    mv s1, a1
+    # Epilogue
+    lw a0, 0(sp)
+    lw a1, 4(sp)
+    lw ra, 8(sp)
+    addi sp, sp, 12
 ```
